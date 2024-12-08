@@ -89,7 +89,7 @@ def download_video(url):
 def setup_chrome_options():
     options = uc.ChromeOptions()
     
-    # Basic stealth settings
+    # Basic settings
     options.add_argument('--headless')
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
@@ -97,18 +97,21 @@ def setup_chrome_options():
     
     # Heroku-specific Chrome settings
     if os.getenv('DYNO'):  # Check if running on Heroku
-        chrome_bin = os.getenv('GOOGLE_CHROME_BIN', '/app/.apt/usr/bin/google-chrome')
-        options.binary_location = chrome_bin
-        options.add_argument('--disable-dev-tools')
-        options.add_argument('--disable-software-rasterizer')
-        options.add_argument('--remote-debugging-port=9222')
+        options.binary_location = "/usr/bin/google-chrome"
     
     return options
 
 def create_stealth_driver():
     try:
         options = setup_chrome_options()
-        driver = uc.Chrome(options=options)
+        if os.getenv('DYNO'):  # If on Heroku
+            driver = uc.Chrome(
+                options=options,
+                browser_executable_path="/usr/bin/google-chrome",
+                driver_executable_path="/usr/local/bin/chromedriver"
+            )
+        else:
+            driver = uc.Chrome(options=options)
         return driver
     except Exception as e:
         print(f"Error creating Chrome driver: {e}")
