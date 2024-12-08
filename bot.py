@@ -86,8 +86,7 @@ def download_video(url):
         print(f"Error downloading {url}: {e}")
         return False
 
-def create_stealth_driver():
-    # Use undetected-chromedriver instead of regular Chrome
+def setup_chrome_options():
     options = uc.ChromeOptions()
     
     # Basic stealth settings
@@ -95,6 +94,20 @@ def create_stealth_driver():
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    
+    # Heroku-specific Chrome settings
+    if os.getenv('DYNO'):  # Check if running on Heroku
+        options.binary_location = os.getenv('GOOGLE_CHROME_SHIM', None)
+        options.add_argument('--disable-dev-tools')
+        options.add_argument('--disable-software-rasterizer')
+    
+    return options
+
+def create_stealth_driver():
+    # Use undetected-chromedriver instead of regular Chrome
+    options = setup_chrome_options()
+    
+    # Additional stealth settings
     options.add_argument("--window-size=1920,1080")
     
     # Block notifications and popups
