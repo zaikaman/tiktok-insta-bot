@@ -108,7 +108,7 @@ def create_stealth_driver():
             driver = uc.Chrome(
                 options=options,
                 browser_executable_path="/usr/bin/chromium-browser",
-                driver_executable_path="/usr/bin/chromedriver"
+                driver_executable_path="/usr/lib/chromium-browser/chromedriver"
             )
         else:
             driver = uc.Chrome(options=options)
