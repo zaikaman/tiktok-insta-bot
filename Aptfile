@@ -1,13 +1,10 @@
 chromium-browser
-chromium-browser-l10n
 chromium-chromedriver
 xvfb
-libgconf-2-4
 libnss3
 libxss1
 libasound2
 fonts-liberation
-libappindicator3-1
 xdg-utils
 libglib2.0-0
 libfontconfig1
@@ -18,7 +15,6 @@ libxcomposite1
 libxcursor1
 libxdamage1
 libxext6
-libxfixes3
 libxi6
 libxrandr2
 libxrender1
