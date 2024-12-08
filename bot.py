@@ -94,10 +94,16 @@ def setup_chrome_options():
     options.add_argument('--disable-gpu')
     options.add_argument('--no-sandbox')
     options.add_argument('--disable-dev-shm-usage')
+    options.add_argument('--disable-setuid-sandbox')
+    options.add_argument('--single-process')
     
-    # Heroku-specific Chrome settings
-    if os.getenv('DYNO'):  # Check if running on Heroku
+    # Additional settings for Heroku
+    if os.getenv('DYNO'):
         options.binary_location = "/app/.apt/usr/bin/chromium-browser"
+        options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--remote-debugging-port=9222')
+        options.add_argument('--window-size=1920,1080')
     
     return options
 
@@ -108,14 +114,24 @@ def create_stealth_driver():
             chrome_driver_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'drivers', 'chromedriver')
             driver = uc.Chrome(
                 options=options,
+                driver_executable_path=chrome_driver_path,
                 browser_executable_path="/app/.apt/usr/bin/chromium-browser",
-                driver_executable_path=chrome_driver_path
+                version_main=131  # Match with ChromeDriver version 131.0.6778.87
             )
         else:
             driver = uc.Chrome(options=options)
+            
+        # Add error checking
+        if not driver:
+            raise Exception("Failed to create Chrome driver")
+            
         return driver
     except Exception as e:
         print(f"Error creating Chrome driver: {e}")
+        if os.getenv('DYNO'):
+            print("Chrome binary location:", options.binary_location)
+            print("ChromeDriver path:", chrome_driver_path)
+            print("Chrome version:", os.popen(f"{options.binary_location} --version").read())
         raise
 
 def get_video_urls(driver, num_videos=10):
