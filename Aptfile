@@ -3,7 +3,7 @@ chromium-chromedriver
 xvfb
 libnss3
 libxss1
-libasound2
+libasound2t64
 fonts-liberation
 xdg-utils
 libglib2.0-0
