@@ -97,7 +97,7 @@ def setup_chrome_options():
     
     # Heroku-specific Chrome settings
     if os.getenv('DYNO'):  # Check if running on Heroku
-        options.binary_location = "/usr/bin/google-chrome"
+        options.binary_location = "/usr/bin/chromium-browser"
     
     return options
 
@@ -107,8 +107,8 @@ def create_stealth_driver():
         if os.getenv('DYNO'):  # If on Heroku
             driver = uc.Chrome(
                 options=options,
-                browser_executable_path="/usr/bin/google-chrome",
-                driver_executable_path="/usr/local/bin/chromedriver"
+                browser_executable_path="/usr/bin/chromium-browser",
+                driver_executable_path="/usr/bin/chromedriver"
             )
         else:
             driver = uc.Chrome(options=options)
