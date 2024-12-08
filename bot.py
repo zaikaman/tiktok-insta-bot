@@ -105,10 +105,11 @@ def create_stealth_driver():
     try:
         options = setup_chrome_options()
         if os.getenv('DYNO'):  # If on Heroku
+            chrome_driver_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'drivers', 'chromedriver')
             driver = uc.Chrome(
                 options=options,
                 browser_executable_path="/usr/bin/chromium-browser",
-                driver_executable_path="/usr/lib/chromium-browser/chromedriver"
+                driver_executable_path=chrome_driver_path
             )
         else:
             driver = uc.Chrome(options=options)

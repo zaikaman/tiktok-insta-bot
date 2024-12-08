@@ -1,4 +1,7 @@
-videos/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
 .env
+videos/
+*.mp4
+drivers/
