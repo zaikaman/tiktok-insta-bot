@@ -7,13 +7,9 @@ echo "Starting ChromeDriver download..."
 mkdir -p drivers
 cd drivers
 
-# Get Chrome version
-CHROME_VERSION=$(chromium-browser --version | grep -oP "[\d.]+")
-echo "Chrome version: $CHROME_VERSION"
-
-# Get matching ChromeDriver version
-CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%%.*}")
-echo "ChromeDriver version: $CHROMEDRIVER_VERSION"
+# Use a fixed version of ChromeDriver that works with Chromium
+CHROMEDRIVER_VERSION="119.0.6045.105"
+echo "Using ChromeDriver version: $CHROMEDRIVER_VERSION"
 
 # Download ChromeDriver
 echo "Downloading ChromeDriver..."
