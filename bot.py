@@ -97,65 +97,22 @@ def setup_chrome_options():
     
     # Heroku-specific Chrome settings
     if os.getenv('DYNO'):  # Check if running on Heroku
-        options.binary_location = os.getenv('GOOGLE_CHROME_SHIM', None)
+        chrome_bin = os.getenv('GOOGLE_CHROME_BIN', '/app/.apt/usr/bin/google-chrome')
+        options.binary_location = chrome_bin
         options.add_argument('--disable-dev-tools')
         options.add_argument('--disable-software-rasterizer')
+        options.add_argument('--remote-debugging-port=9222')
     
     return options
 
 def create_stealth_driver():
-    # Use undetected-chromedriver instead of regular Chrome
-    options = setup_chrome_options()
-    
-    # Additional stealth settings
-    options.add_argument("--window-size=1920,1080")
-    
-    # Block notifications and popups
-    options.add_argument('--disable-notifications')
-    options.add_argument('--disable-popup-blocking')
-    prefs = {
-        "profile.default_content_setting_values.notifications": 2,
-        "profile.default_content_settings.popups": 0,
-        "profile.default_content_setting_values.automatic_downloads": 1
-    }
-    options.add_experimental_option("prefs", prefs)
-    
-    # Additional privacy settings
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    options.add_argument('--disable-infobars')
-    
-    # Random user agent
-    user_agents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0'
-    ]
-    options.add_argument(f'--user-agent={random.choice(user_agents)}')
-    
-    # Create driver with undetected-chromedriver
-    driver = uc.Chrome(options=options)
-    
-    # Set window size and position randomly
-    driver.set_window_size(random.randint(1050, 1200), random.randint(800, 960))
-    driver.set_window_position(random.randint(0, 100), random.randint(0, 100))
-    
-    # Execute additional stealth scripts
-    driver.execute_script("""
-        Object.defineProperty(navigator, 'webdriver', {
-            get: () => false
-        });
-        Object.defineProperty(navigator, 'plugins', {
-            get: () => [1, 2, 3, 4, 5]
-        });
-        Object.defineProperty(navigator, 'languages', {
-            get: () => ['en-US', 'en']
-        });
-        window.chrome = {
-            runtime: {}
-        };
-    """)
-    
-    return driver
+    try:
+        options = setup_chrome_options()
+        driver = uc.Chrome(options=options)
+        return driver
+    except Exception as e:
+        print(f"Error creating Chrome driver: {e}")
+        raise
 
 def get_video_urls(driver, num_videos=10):
     try:
