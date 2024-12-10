@@ -103,7 +103,7 @@ def create_stealth_driver():
         print(f"Error creating driver: {e}")
         return None
 
-def get_video_urls(driver, num_videos=10):
+def get_video_urls(driver, num_videos=100):
     video_urls = []
     last_height = driver.execute_script("return document.body.scrollHeight")
     
@@ -263,7 +263,7 @@ def process_new_videos(video_urls):
                             print(f"Uploading to YouTube: {video_path}")
                             if upload_to_youtube(video_path):
                                 print("Waiting 30 minutes before next operation...")
-                                time.sleep(1800)  # Wait 30 minutes
+                                time.sleep(900)  # Wait 30 minutes
                             else:
                                 print("YouTube upload failed, will retry next time")
             else:
