@@ -28,6 +28,9 @@ VIDEOS_DIR = "videos_bot2"  # Different directory to avoid conflicts with bot.py
 TRACKED_URLS_FILE = "tracked_urls_bot2.json"
 UPLOADED_VIDEOS_FILE = "uploaded_videos_bot2.json"
 TIKTOK_PROFILE = os.getenv("TIKTOK_PROFILE2")
+QUOTA_RESET_HOUR = 7  # YouTube quota resets at midnight Pacific Time (7 AM UTC)
+MAX_RETRIES = 3
+COOLDOWN_HOURS = 6
 
 # YouTube API Constants
 SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
@@ -144,58 +147,90 @@ def get_authenticated_service():
     
     return build('youtube', 'v3', credentials=credentials)
 
+def is_quota_exceeded(error):
+    if isinstance(error, HttpError):
+        return error.resp.status == 403 and 'quotaExceeded' in str(error.content)
+    return False
+
+def wait_for_quota_reset():
+    current_time = datetime.utcnow()
+    next_reset = current_time.replace(hour=QUOTA_RESET_HOUR, minute=0, second=0, microsecond=0)
+    if current_time.hour >= QUOTA_RESET_HOUR:
+        next_reset = next_reset.replace(day=next_reset.day + 1)
+    
+    wait_seconds = (next_reset - current_time).total_seconds()
+    print(f"Quota exceeded. Waiting until next reset at {next_reset} UTC")
+    time.sleep(wait_seconds)
+
 def upload_to_youtube(video_file):
-    try:
-        youtube = get_authenticated_service()
-        
-        # Generate title from filename
-        title = os.path.splitext(os.path.basename(video_file))[0]
-        title = f"#shorts {title} #pet #cat #dog #cute #animals #foryou #typ"
-        
-        # Default description
-        description = "#pet #cat #dog #cute #animals #foryou #typ"
-        
-        body = {
-            'snippet': {
-                'title': title,
-                'description': description,
-                'categoryId': '22'
-            },
-            'status': {
-                'privacyStatus': 'public',
-                'selfDeclaredMadeForKids': False
+    if not os.path.exists(video_file):
+        print(f"Video file not found: {video_file}")
+        return False
+
+    youtube = get_authenticated_service()
+    if not youtube:
+        return False
+
+    video_id = os.path.splitext(os.path.basename(video_file))[0]
+    
+    for attempt in range(MAX_RETRIES):
+        try:
+            body = {
+                'snippet': {
+                    'title': f'#shorts #pet #cat #dog #cute #animals #foryou #typ',
+                    'description': '#shorts #pet #cat #dog #cute #animals #foryou #typ',
+                    'categoryId': '22'
+                },
+                'status': {
+                    'privacyStatus': 'public',
+                    'selfDeclaredMadeForKids': False
+                }
             }
-        }
 
-        insert_request = youtube.videos().insert(
-            part=','.join(body.keys()),
-            body=body,
-            media_body=MediaFileUpload(video_file, chunksize=-1, resumable=True)
-        )
+            insert_request = youtube.videos().insert(
+                part=','.join(body.keys()),
+                body=body,
+                media_body=MediaFileUpload(video_file, chunksize=-1, resumable=True)
+            )
 
-        print(f'Uploading to YouTube: {video_file}...')
-        response = insert_request.execute()
-        print(f'YouTube upload complete! Video ID: {response["id"]}')
-        
-        # Mark as uploaded
-        if os.path.exists(UPLOADED_VIDEOS_FILE):
-            with open(UPLOADED_VIDEOS_FILE, 'r') as f:
-                uploaded_videos = json.load(f)
-        else:
-            uploaded_videos = []
-        
-        uploaded_videos.append(video_file)
-        with open(UPLOADED_VIDEOS_FILE, 'w') as f:
-            json.dump(uploaded_videos, f, indent=4)
+            response = None
+            while response is None:
+                status, response = insert_request.next_chunk()
+                if status:
+                    print(f"Uploaded {int(status.progress() * 100)}%")
+
+            print(f"Upload Complete! Video ID: {response['id']}")
             
-        return True
+            # Mark as uploaded
+            if os.path.exists(UPLOADED_VIDEOS_FILE):
+                with open(UPLOADED_VIDEOS_FILE, 'r') as f:
+                    uploaded_videos = json.load(f)
+            else:
+                uploaded_videos = []
+            
+            uploaded_videos.append(video_file)
+            with open(UPLOADED_VIDEOS_FILE, 'w') as f:
+                json.dump(uploaded_videos, f, indent=4)
+            
+            return True
 
-    except HttpError as e:
-        print(f'An HTTP error {e.resp.status} occurred: {e.content}')
-        return False
-    except Exception as e:
-        print(f'An error occurred during YouTube upload: {e}')
-        return False
+        except HttpError as e:
+            if is_quota_exceeded(e):
+                print("YouTube quota exceeded!")
+                if attempt < MAX_RETRIES - 1:
+                    cooldown_seconds = COOLDOWN_HOURS * 3600
+                    print(f"Cooling down for {COOLDOWN_HOURS} hours before retry...")
+                    time.sleep(cooldown_seconds)
+                else:
+                    wait_for_quota_reset()
+            else:
+                print(f"An HTTP error occurred: {e}")
+                return False
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return False
+    
+    return False
 
 def process_new_videos(video_urls):
     tracked_urls = load_tracked_urls()
