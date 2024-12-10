@@ -5,3 +5,4 @@ __pycache__/
 videos/
 *.mp4
 drivers/
+client_secrets.json
