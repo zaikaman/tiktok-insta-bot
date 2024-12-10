@@ -21,12 +21,15 @@ load_dotenv()
 # Constants
 VIDEOS_DIR = "videos"
 TRACKED_URLS_FILE = "tracked_urls.json"
-TIKTOK_PROFILE = "https://www.tiktok.com/@kienvocal"
+TIKTOK_PROFILE = os.getenv("TIKTOK_PROFILE")
 INSTA_USERNAME = os.getenv("INSTA_USERNAME")
 INSTA_PASSWORD = os.getenv("INSTA_PASSWORD")
 
 if not INSTA_USERNAME or not INSTA_PASSWORD:
     raise ValueError("Instagram credentials not found in environment variables!")
+
+if not TIKTOK_PROFILE:
+    raise ValueError("TikTok profile URL not found in environment variables!")
 
 def ensure_directory_exists():
     if not os.path.exists(VIDEOS_DIR):
@@ -201,7 +204,7 @@ def visit_tiktok_profile():
         
         try:
             time.sleep(random.uniform(2, 4))
-            driver.get("https://www.tiktok.com/@kienvocal")
+            driver.get(TIKTOK_PROFILE)
             time.sleep(3)
             
             for _ in range(3):
