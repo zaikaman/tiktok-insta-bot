@@ -76,7 +76,7 @@ def download_video(url):
 
 def setup_chrome_options():
     chrome_options = Options()
-    # chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--headless')
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-gpu')
@@ -150,12 +150,15 @@ def upload_to_youtube(video_file):
         
         # Generate title from filename
         title = os.path.splitext(os.path.basename(video_file))[0]
-        title = f"#shorts {title}"
+        title = f"#shorts {title} #pet #cat #dog #cute #animals #foryou #typ"
+        
+        # Default description
+        description = "#pet #cat #dog #cute #animals #foryou #typ"
         
         body = {
             'snippet': {
                 'title': title,
-                'description': "",
+                'description': description,
                 'categoryId': '22'
             },
             'status': {
