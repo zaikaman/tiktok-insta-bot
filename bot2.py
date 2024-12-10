@@ -29,7 +29,7 @@ TRACKED_URLS_FILE = "tracked_urls_bot2.json"
 UPLOADED_VIDEOS_FILE = "uploaded_videos_bot2.json"
 TIKTOK_PROFILE = os.getenv("TIKTOK_PROFILE2")
 QUOTA_RESET_HOUR = 7  # YouTube quota resets at midnight Pacific Time (7 AM UTC)
-MAX_RETRIES = 3
+MAX_RETRIES = 4
 COOLDOWN_HOURS = 6
 
 # YouTube API Constants
