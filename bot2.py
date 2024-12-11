@@ -369,12 +369,11 @@ def job():
         videos_processed = process_unuploaded_videos(unuploaded_urls)
         print(f"Processed {videos_processed} videos")
         if videos_processed > 0:
-            print("Waiting 5 minutes before next operation...")
-            time.sleep(300)  # Wait 5 minutes instead of 30
-        return
+            print("Waiting 5 minutes before searching for new videos...")
+            time.sleep(300)  # Wait 5 minutes
     
-    # If no unuploaded videos, proceed with finding new videos
-    print("No unuploaded videos found. Searching for new videos...")
+    # Proceed with finding new videos
+    print("Searching for new videos...")
     visit_tiktok_profile()
 
 def main():
