@@ -97,7 +97,7 @@ def create_stealth_driver():
     options.add_argument('--window-size=1920x1080')
     
     try:
-        driver = uc.Chrome(options=options)
+        driver = uc.Chrome(options=options, version_main=131)
         return driver
     except Exception as e:
         print(f"Error creating driver: {e}")
@@ -271,6 +271,53 @@ def process_new_videos(video_urls):
     
     return new_videos_downloaded
 
+def get_unuploaded_videos():
+    # Load tracked URLs
+    tracked_data = load_tracked_urls()
+    tracked_urls = tracked_data.get("downloaded_urls", [])
+    
+    # Load uploaded videos
+    uploaded_videos = []
+    if os.path.exists(UPLOADED_VIDEOS_FILE):
+        with open(UPLOADED_VIDEOS_FILE, 'r') as f:
+            uploaded_videos = json.load(f)
+    
+    # Get video IDs from uploaded videos
+    uploaded_ids = set(os.path.splitext(os.path.basename(v))[0] for v in uploaded_videos)
+    
+    # Find URLs that haven't been uploaded
+    unuploaded_urls = []
+    for url in tracked_urls:
+        video_id = url.split('/')[-1]
+        if video_id not in uploaded_ids:
+            unuploaded_urls.append(url)
+    
+    return unuploaded_urls
+
+def process_unuploaded_videos(unuploaded_urls):
+    videos_processed = 0
+    
+    for url in unuploaded_urls:
+        video_id = url.split('/')[-1]
+        video_path = os.path.join(VIDEOS_DIR, f"{video_id}.mp4")
+        
+        # If video doesn't exist locally, download it
+        if not os.path.exists(video_path):
+            print(f"Downloading video {url}")
+            if not download_video(url):
+                print(f"Failed to download video: {url}")
+                continue
+        
+        # Upload to YouTube
+        print(f"Uploading to YouTube: {video_path}")
+        if upload_to_youtube(video_path):
+            videos_processed += 1
+            print(f"Successfully uploaded: {video_path}")
+        else:
+            print(f"Failed to upload: {video_path}")
+    
+    return videos_processed
+
 def visit_tiktok_profile():
     print(f"\nStarting TikTok profile visit at {datetime.now()}")
     driver = None
@@ -313,13 +360,22 @@ def visit_tiktok_profile():
 
 def job():
     print(f"\nStarting job at {datetime.now()}")
-    try:
-        ensure_directory_exists()
-        visit_tiktok_profile()
-    except Exception as e:
-        print(f"Error during job execution: {e}")
+    ensure_directory_exists()
     
-    print("Job completed")
+    # First check for any unuploaded videos from previously tracked URLs
+    unuploaded_urls = get_unuploaded_videos()
+    if unuploaded_urls:
+        print(f"Found {len(unuploaded_urls)} unuploaded videos from previous tracking. Processing these first...")
+        videos_processed = process_unuploaded_videos(unuploaded_urls)
+        print(f"Processed {videos_processed} videos")
+        if videos_processed > 0:
+            print("Waiting 5 minutes before next operation...")
+            time.sleep(300)  # Wait 5 minutes instead of 30
+        return
+    
+    # If no unuploaded videos, proceed with finding new videos
+    print("No unuploaded videos found. Searching for new videos...")
+    visit_tiktok_profile()
 
 def main():
     # Run job immediately once
